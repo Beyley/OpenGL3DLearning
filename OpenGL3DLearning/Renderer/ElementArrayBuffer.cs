@@ -5,28 +5,28 @@ using static OpenGL3DLearning.GameWindow;
 
 namespace OpenGL3DLearning.Renderer; 
 
-public unsafe class VertexBuffer : IDisposable {
+public unsafe class ElementArrayBuffer {
 	public readonly uint Id;
 	public readonly uint Size;
 
-	public VertexBuffer(uint size, BufferUsageARB usage = BufferUsageARB.StaticDraw) {
+	public ElementArrayBuffer(uint size, BufferUsageARB usage = BufferUsageARB.StaticDraw) {
 		this.Id   = gl.CreateBuffer();
 		this.Size = size;
 		
 		this.Bind();
 		
 		//Fill the buffer with null to allocate the size
-		gl.BufferData(BufferTargetARB.ArrayBuffer, size, null, usage);
+		gl.BufferData(BufferTargetARB.ElementArrayBuffer, size, null, usage);
 		
 		this.Unbind();
 	}
 
-	internal static uint LastBound => (uint)gl.GetInteger((GLEnum)GetPName.ArrayBufferBinding);
+	internal static uint LastBound => (uint)gl.GetInteger((GLEnum)GetPName.ElementArrayBufferBinding);
 
 	[Conditional("DEBUG")]
 	private void CheckForDoubleBind() {
 		if(LastBound == this.Id)
-			Logger.Log("Double bind of VBO found!");
+			Logger.Log("Double bind of EBO found!");
 	}
 	
 	[Conditional("DEBUG")]
@@ -38,7 +38,7 @@ public unsafe class VertexBuffer : IDisposable {
 	[Conditional("DEBUG")]
 	private static void CheckForRedundantUnbind() {
 		if(LastBound == 0)
-			Logger.Log("Double unbind of VBO found!");
+			Logger.Log("Double unbind of EBO found!");
 	}
 	
 	public void SetData <T>(T[] arr) where T : unmanaged {
@@ -48,13 +48,14 @@ public unsafe class VertexBuffer : IDisposable {
 			throw new InvalidOperationException("You cannot set the data of a buffer larger than its original size!");
 		
 		fixed(void* ptr = arr)
-			gl.BufferSubData(BufferTargetARB.ArrayBuffer, 0, (nuint)(sizeof(T) * arr.Length), ptr);
+			gl.BufferSubData(BufferTargetARB.ElementArrayBuffer, 0, (nuint)(sizeof(T) * arr.Length), ptr);
+		// gl.BufferSubData<T>(BufferTargetARB.ElementArrayBuffer, 0, arr);
 	}
 
 	public void Bind() {
 		this.CheckForDoubleBind();
 		
-		gl.BindBuffer(BufferTargetARB.ArrayBuffer, this.Id);
+		gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, this.Id);
 	}
 
 	public void Unbind() {
@@ -64,7 +65,7 @@ public unsafe class VertexBuffer : IDisposable {
 	public static void UnbindGlobal() {
 		CheckForRedundantUnbind();
 		
-		gl.BindBuffer(GLEnum.ArrayBuffer, 0);
+		gl.BindBuffer(GLEnum.ElementArrayBuffer, 0);
 	}
 
 	private bool _isDisposed;
